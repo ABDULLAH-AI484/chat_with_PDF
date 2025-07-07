@@ -1,4 +1,4 @@
-# PDF Q&A Chatbot with Gemini AI
+# PDF Q&A Chatbot with Gemini API
 A FastAPI web application that leverages Google's Gemini models through LangChain's powerful framework for document processing and intelligent question answering..
 
 ## Features
