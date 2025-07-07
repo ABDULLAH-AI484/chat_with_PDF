@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PDF Chatbot</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .chat-container {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 20px;
+            height: 400px;
+            overflow-y: auto;
+        }
+        .message {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .user-message {
+            background-color: #e3f2fd;
+            text-align: right;
+        }
+        .bot-message {
+            background-color: #f5f5f5;
+        }
+        #pdf-upload {
+            margin-bottom: 20px;
+        }
+        #question-input {
+            width: 70%;
+            padding: 10px;
+        }
+        #ask-button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>PDF Chatbot</h1>
+<!--    <form action="/upload" method="post" enctype="multipart/form-data">-->
+    <div id="pdf-upload">
+        <h3>Upload PDF</h3>
+        <input type="file" id="pdf-file" accept=".pdf">
+        <button onclick="uploadPDF()">Upload</button>
+        <p id="upload-status"></p>
+    </div>
+
+    <div class="chat-container" id="chat-container">
+        <!-- Chat messages will appear here -->
+    </div>
+
+    <div>
+        <input type="text" id="question-input" placeholder="Ask a question about the PDF...">
+        <button id="ask-button" onclick="askQuestion()">Ask</button>
+    </div>
+
+    <script>
+        function addMessage(text, isUser) {
+            const chatContainer = document.getElementById('chat-container');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+            messageDiv.textContent = text;
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        async function uploadPDF() {
+            const fileInput = document.getElementById('pdf-file');
+            const statusElement = document.getElementById('upload-status');
+
+            if (!fileInput.files.length) {
+                statusElement.textContent = "Please select a PDF file";
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            try {
+                statusElement.textContent = "Uploading...";
+                const response = await axios.post('/upload', formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                });
+
+                if (response.data.status === "success") {
+                    statusElement.textContent = "PDF uploaded successfully!";
+                    addMessage("PDF is ready for questions. Ask me anything about it!", false);
+                } else {
+                    statusElement.textContent = "Error: " + response.data.message;
+                }
+            } catch (error) {
+                statusElement.textContent = "Error uploading file: " + error.message;
+            }
+        }
+
+        async function askQuestion() {
+            const questionInput = document.getElementById('question-input');
+            const question = questionInput.value.trim();
+
+            if (!question) return;
+
+            addMessage(question, true);
+            questionInput.value = '';
+
+            try {
+                const response = await axios.post('/ask', new URLSearchParams({
+                    question: question
+                }), {
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    }
+                });
+
+                if (response.data.status === "success") {
+                    addMessage(response.data.answer, false);
+                } else {
+                    addMessage("Error: " + response.data.message, false);
+                }
+            } catch (error) {
+                addMessage("Error getting answer: " + error.message, false);
+            }
+        }
+
+        // Allow pressing Enter to ask question
+        document.getElementById('question-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                askQuestion();
+            }
+        });
+    </script>
+</body>
+</html>
