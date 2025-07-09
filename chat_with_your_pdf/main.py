@@ -26,7 +26,10 @@ rag_chain = None
 
 def configure_gemini():
     import google.generativeai as genai
-    api_key = os.getenv("GEMINI_API_KEY", "AIzaSyD2Spj5z0iU6KFA3pWfU3Dgq7XD_h5Vzcc")
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        api_key = input("Enter your Gemini API key: ")
+        os.environ["GEMINI_API_KEY"] = api_key
     genai.configure(api_key=api_key)
     return api_key
 
@@ -128,5 +131,6 @@ async def ask_question(question: str = Form(...)):
 
 # Add this at the bottom of your main.py
 if __name__ == "__main__":
+    api_key = configure_gemini()
     import uvicorn
     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
